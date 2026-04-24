@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="DCSC">
+  <meta name="apple-mobile-web-app-title" content="ARL">
   <meta name="theme-color" content="#1E1F4D">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <title>DCSC Soccer Tracker</title>
+  <title>Arlington Soccer Tracker</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@600;700;800&display=swap" rel="stylesheet">
@@ -113,7 +113,7 @@
           <span id="score-away">0</span>
         </div>
         <div id="score-teams">
-          <span id="score-home-label">DCSC</span>
+          <span id="score-home-label">ARL</span>
           <span id="score-away-label">Opponent</span>
         </div>
       </div>
@@ -180,7 +180,7 @@
       <div class="form-group">
         <label>Who kicks first?</label>
         <div class="pk-first-kick-options">
-          <label class="radio-label"><input type="radio" name="pk-first" value="dcsc" checked> DCSC</label>
+          <label class="radio-label"><input type="radio" name="pk-first" value="dcsc" checked> ARL</label>
           <label class="radio-label" id="pk-first-opp-label"><input type="radio" name="pk-first" value="opponent"> Opponent</label>
         </div>
       </div>
@@ -217,7 +217,7 @@
       <div id="card-step-team" class="card-step">
         <h3>Issue Card</h3>
         <div class="card-team-btns">
-          <button class="btn btn-primary btn-full" onclick="cardSelectTeam('dcsc')">DCSC</button>
+          <button class="btn btn-primary btn-full" onclick="cardSelectTeam('dcsc')">ARL</button>
           <button class="btn btn-danger btn-full" id="card-opp-btn" onclick="cardSelectTeam('opponent')">Opponent</button>
         </div>
         <button class="btn btn-secondary btn-full" onclick="cancelCard()" style="margin-top:12px">Cancel</button>
@@ -234,10 +234,10 @@
       </div>
 
       <!-- Step 3a: DCSC player selection -->
-      <div id="card-step-dcsc-player" class="card-step hidden">
-        <h3 id="card-dcsc-title">Who received the card?</h3>
+      <div id="card-step-arl-player" class="card-step hidden">
+        <h3 id="card-arl-title">Who received the card?</h3>
         <div id="card-player-grid"></div>
-        <button class="btn btn-secondary btn-full" onclick="cardSelectDcscCoach()">Coach</button>
+        <button class="btn btn-secondary btn-full" onclick="cardSelectARLCoach()">Coach</button>
         <button class="btn btn-secondary btn-full" onclick="cardBackToType()" style="margin-top:8px">Back</button>
       </div>
 
@@ -293,7 +293,7 @@
         <label for="edit-game-date">Date</label>
         <input type="date" id="edit-game-date">
       </div>
-      <h4 class="edit-section-label">DCSC Goals</h4>
+      <h4 class="edit-section-label">ARL Goals</h4>
       <div id="edit-game-goals"></div>
       <button id="edit-add-goal-btn" class="btn btn-secondary btn-full" style="margin-top:8px">+ Add Goal</button>
       <h4 class="edit-section-label">Opponent Goals</h4>
