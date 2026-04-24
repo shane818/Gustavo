@@ -19,10 +19,10 @@ let timerElapsed = 0;  // accumulated seconds
 // PK state
 let pkTotalKicks = 5;
 let pkRound = 1;
-let pkTeamTurn = 'dcsc';  // alternates
-let pkScoreDCSC = 0;
+let pkTeamTurn = 'ARL';  // alternates
+let pkScoreARL = 0;
 let pkScoreOpp = 0;
-let pkTakenDCSC = 0;
+let pkTakenARL = 0;
 let pkTakenOpp = 0;
 let pkSuddenDeath = false;
 let pendingPkPlayerId = null;
@@ -93,7 +93,7 @@ async function loadDataFile() {
   if (localStorage.getItem('rosterSeeded') && getGames().length > 0) return;
 
   try {
-    const resp = await fetch('dcsc-data.json');
+    const resp = await fetch('arl-data.json');
     const data = await resp.json();
 
     if (data.roster) saveRoster(data.roster);
