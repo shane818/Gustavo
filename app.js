@@ -102,7 +102,7 @@ async function loadDataFile() {
     if (data.season) localStorage.setItem('season', data.season);
     localStorage.setItem('rosterSeeded', 'true');
   } catch (e) {
-    // dcsc-data.json not available — fall back to roster-only seed
+    // arl-data.json not available — fall back to roster-only seed
     await seedRosterFromFile();
   }
 }
@@ -186,18 +186,18 @@ function renderEventLine(e, rosterMap, opponent, score) {
     const note = e.secondYellow ? ' (2nd yellow)' : '';
     return `<div class="goal-event card-event red"><span class="event-icon">🟥</span> ${min}${who}${note}</div>`;
   } else if (e.type === 'pk_goal') {
-    const who = e.team === 'dcsc' ? (rosterMap[e.playerId] || 'DCSC') : opponent;
+    const who = e.team === 'arl' ? (rosterMap[e.playerId] || 'ARL') : opponent;
     return `<div class="goal-event pk-event"><span class="event-icon">⚽</span> PK ${who}</div>`;
   } else if (e.type === 'pk_miss') {
-    const who = e.team === 'dcsc' ? (rosterMap[e.playerId] || 'DCSC') : opponent;
+    const who = e.team === 'arl' ? (rosterMap[e.playerId] || 'ARL') : opponent;
     return `<div class="goal-event pk-event pk-miss"><span class="event-icon">✕</span> PK ${who}</div>`;
   }
   return '';
 }
 
 function cardRecipientLabel(e, rosterMap, opponent) {
-  if (e.team === 'dcsc') {
-    if (e.isCoach) return 'DCSC Coach';
+  if (e.team === 'arl') {
+    if (e.isCoach) return 'ARL Coach';
     return rosterMap[e.playerId] || '?';
   } else {
     if (e.isCoach) return `${opponent} Coach`;
@@ -246,11 +246,11 @@ function renderGamesTab() {
     (g.guestPlayers || []).forEach(p => rosterMap[p.id] = p.name);
 
     const events = g.events || [];
-    let runDCSC = 0, runOpp = 0;
+    let runARL = 0, runOpp = 0;
     const detailLines = events.map(e => {
       let score = null;
-      if (e.type === 'goal') { runDCSC++; score = `${runDCSC}-${runOpp}`; }
-      else if (e.type === 'opponent_goal') { runOpp++; score = `${runDCSC}-${runOpp}`; }
+      if (e.type === 'goal') { runARL++; score = `${runARL}-${runOpp}`; }
+      else if (e.type === 'opponent_goal') { runOpp++; score = `${runARL}-${runOpp}`; }
       return renderEventLine(e, rosterMap, g.opponent, score);
     }).join('');
     const hasEvents = events.length > 0;
@@ -262,7 +262,7 @@ function renderGamesTab() {
             <div class="game-date">${formatDate(g.date)}</div>
             <div class="game-matchup">vs ${g.opponent}</div>
           </div>
-          <div class="game-score result-${g.result}">${g.result} ${g.goalsFor}-${g.goalsAgainst}${g.pkScore ? ` (${g.pkScore.dcsc}-${g.pkScore.opponent})` : ''}</div>
+          <div class="game-score result-${g.result}">${g.result} ${g.goalsFor}-${g.goalsAgainst}${g.pkScore ? ` (${g.pkScore.arl}-${g.pkScore.opponent})` : ''}</div>
         </div>
         <div class="game-details">
           ${hasEvents ? detailLines : '<div style="color:#999">No events recorded</div>'}
@@ -683,27 +683,27 @@ function restorePKState(game) {
 }
 
 function rebuildPKStateFromEvents(game) {
-  pkScoreDCSC = 0; pkScoreOpp = 0;
-  pkTakenDCSC = 0; pkTakenOpp = 0;
-  const firstKicker = game.pkState?.firstKicker || 'dcsc';
-  const secondKicker = firstKicker === 'dcsc' ? 'opponent' : 'dcsc';
+  pkScoreARL = 0; pkScoreOpp = 0;
+  pkTakenARL = 0; pkTakenOpp = 0;
+  const firstKicker = game.pkState?.firstKicker || 'ARL';
+  const secondKicker = firstKicker === 'ARL' ? 'opponent' : 'ARL';
   game.events.forEach(e => {
     if (e.type === 'pk_goal') {
-      if (e.team === 'dcsc') { pkScoreDCSC++; pkTakenDCSC++; }
+      if (e.team === 'ARL') { pkScoreARL++; pkTakenARL++; }
       else { pkScoreOpp++; pkTakenOpp++; }
     } else if (e.type === 'pk_miss') {
-      if (e.team === 'dcsc') pkTakenDCSC++;
+      if (e.team === 'ARL') pkTakenARL++;
       else pkTakenOpp++;
     }
   });
   // Determine whose turn: alternating, first kicker goes first each round
-  if (pkTakenDCSC === pkTakenOpp) {
+  if (pkTakenARL === pkTakenOpp) {
     pkTeamTurn = firstKicker;  // equal kicks taken → first kicker's turn
   } else {
     pkTeamTurn = secondKicker; // unequal → second kicker catches up
   }
   // Check sudden death
-  pkSuddenDeath = pkTakenDCSC >= pkTotalKicks && pkTakenOpp >= pkTotalKicks && pkScoreDCSC === pkScoreOpp;
+  pkSuddenDeath = pkTakenARL >= pkTotalKicks && pkTakenOpp >= pkTotalKicks && pkScoreARL === pkScoreOpp;
 }
 
 function showIngame() {
@@ -729,7 +729,7 @@ function renderScoreboard() {
   document.getElementById('score-home').textContent = goalsFor;
   document.getElementById('score-away').textContent = game.goalsAgainst;
   document.getElementById('score-away-label').textContent = game.opponent;
-  document.getElementById('score-home-label').textContent = 'DCSC';
+  document.getElementById('score-home-label').textContent = 'ARL';
 
   const phase = game.phase || 'regulation';
   let halfLabel = '';
@@ -839,16 +839,16 @@ function undoLastEvent() {
   } else if (last.type === 'opponent_goal') {
     desc = 'Opponent goal';
   } else if (last.type === 'yellow_card') {
-    const who = last.isCoach ? 'Coach' : (last.team === 'dcsc' ? (roster.find(r => r.id === last.playerId)?.name || '?') : (last.jersey ? `#${last.jersey}` : 'Opponent'));
+    const who = last.isCoach ? 'Coach' : (last.team === 'ARL' ? (roster.find(r => r.id === last.playerId)?.name || '?') : (last.jersey ? `#${last.jersey}` : 'Opponent'));
     desc = `Yellow card: ${who}`;
   } else if (last.type === 'red_card') {
-    const who = last.isCoach ? 'Coach' : (last.team === 'dcsc' ? (roster.find(r => r.id === last.playerId)?.name || '?') : (last.jersey ? `#${last.jersey}` : 'Opponent'));
+    const who = last.isCoach ? 'Coach' : (last.team === 'ARL' ? (roster.find(r => r.id === last.playerId)?.name || '?') : (last.jersey ? `#${last.jersey}` : 'Opponent'));
     desc = `Red card: ${who}`;
   } else if (last.type === 'pk_goal') {
-    const who = last.team === 'dcsc' ? (roster.find(r => r.id === last.playerId)?.name || 'DCSC') : game.opponent;
+    const who = last.team === 'ARL' ? (roster.find(r => r.id === last.playerId)?.name || 'ARL') : game.opponent;
     desc = `PK Goal: ${who}`;
   } else if (last.type === 'pk_miss') {
-    const who = last.team === 'dcsc' ? (roster.find(r => r.id === last.playerId)?.name || 'DCSC') : game.opponent;
+    const who = last.team === 'ARL' ? (roster.find(r => r.id === last.playerId)?.name || 'ARL') : game.opponent;
     desc = `PK Miss: ${who}`;
   }
 
@@ -861,9 +861,9 @@ function undoLastEvent() {
     if (last.type === 'pk_goal' || last.type === 'pk_miss') {
       rebuildPKStateFromEvents(game);
       game.pkState = {
-        totalKicks: pkTotalKicks, firstKicker: game.pkState?.firstKicker || 'dcsc',
-        teamTurn: pkTeamTurn, scoreDCSC: pkScoreDCSC, scoreOpp: pkScoreOpp,
-        takenDCSC: pkTakenDCSC, takenOpp: pkTakenOpp, suddenDeath: pkSuddenDeath
+        totalKicks: pkTotalKicks, firstKicker: game.pkState?.firstKicker || 'ARL',
+        teamTurn: pkTeamTurn, scoreARL: pkScoreARL, scoreOpp: pkScoreOpp,
+        takenARL: pkTakenARL, takenOpp: pkTakenOpp, suddenDeath: pkSuddenDeath
       };
       saveActiveGame(game);
       renderPKView();
@@ -879,7 +879,7 @@ function undoLastEvent() {
 function getScoreSummary() {
   const game = getActiveGame();
   const goalsFor = game.events.filter(e => e.type === 'goal').length;
-  return `DCSC ${goalsFor} - ${game.goalsAgainst} ${game.opponent}`;
+  return `ARL ${goalsFor} - ${game.goalsAgainst} ${game.opponent}`;
 }
 
 function endFirstHalf() {
@@ -973,10 +973,10 @@ function startPenalties() {
   pkTotalKicks = parseInt(document.getElementById('pk-rounds-select').value) || 5;
   pkRound = 1;
   const firstKicker = document.querySelector('input[name="pk-first"]:checked');
-  pkTeamTurn = (firstKicker && firstKicker.value === 'opponent') ? 'opponent' : 'dcsc';
-  pkScoreDCSC = 0;
+  pkTeamTurn = (firstKicker && firstKicker.value === 'opponent') ? 'opponent' : 'ARL';
+  pkScoreARL = 0;
   pkScoreOpp = 0;
-  pkTakenDCSC = 0;
+  pkTakenARL = 0;
   pkTakenOpp = 0;
   pkSuddenDeath = false;
   pendingPkPlayerId = null;
@@ -985,8 +985,8 @@ function startPenalties() {
   game.phase = 'penalties';
   game.pkState = {
     totalKicks: pkTotalKicks, firstKicker: pkTeamTurn,
-    teamTurn: pkTeamTurn, scoreDCSC: 0, scoreOpp: 0,
-    takenDCSC: 0, takenOpp: 0, suddenDeath: false
+    teamTurn: pkTeamTurn, scoreARL: 0, scoreOpp: 0,
+    takenARL: 0, takenOpp: 0, suddenDeath: false
   };
   saveActiveGame(game);
 
@@ -1000,15 +1000,15 @@ function renderPKView() {
   const roster = getGameRoster(game);
   const present = roster.filter(p => game.playersPresent.includes(p.id) && p.name !== 'Own Goal');
 
-  document.getElementById('pk-score-display').textContent = `DCSC ${pkScoreDCSC} - ${pkScoreOpp} ${game.opponent}`;
+  document.getElementById('pk-score-display').textContent = `ARL ${pkScoreARL} - ${pkScoreOpp} ${game.opponent}`;
 
-  const roundLabel = pkSuddenDeath ? 'Sudden Death' : `Kick ${pkTeamTurn === 'dcsc' ? pkTakenDCSC + 1 : pkTakenOpp + 1} of ${pkTotalKicks}`;
-  const teamLabel = pkTeamTurn === 'dcsc' ? 'DCSC' : game.opponent;
+  const roundLabel = pkSuddenDeath ? 'Sudden Death' : `Kick ${pkTeamTurn === 'ARL' ? pkTakenARL + 1 : pkTakenOpp + 1} of ${pkTotalKicks}`;
+  const teamLabel = pkTeamTurn === 'ARL' ? 'ARL' : game.opponent;
   document.getElementById('pk-turn-label').textContent = `${teamLabel} — ${roundLabel}`;
 
-  // Show player selector for DCSC kicks
+  // Show player selector for ARL kicks
   const selectEl = document.getElementById('pk-player-select');
-  if (pkTeamTurn === 'dcsc') {
+  if (pkTeamTurn === 'ARL') {
     selectEl.innerHTML = `<select id="pk-player-dropdown" class="pk-player-dropdown">
       ${present.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
     </select>`;
@@ -1024,28 +1024,28 @@ function pkRecordKick(result) {
   const game = getActiveGame();
   const eventType = result === 'goal' ? 'pk_goal' : 'pk_miss';
 
-  if (pkTeamTurn === 'dcsc') {
+  if (pkTeamTurn === 'ARL') {
     const dropdown = document.getElementById('pk-player-dropdown');
     const playerId = dropdown ? parseInt(dropdown.value) : null;
-    const event = { type: eventType, team: 'dcsc', minute: 'PK', round: pkSuddenDeath ? 'SD' : (pkTakenDCSC + 1) };
+    const event = { type: eventType, team: 'ARL', minute: 'PK', round: pkSuddenDeath ? 'SD' : (pkTakenARL + 1) };
     if (playerId) event.playerId = playerId;
     game.events.push(event);
-    if (result === 'goal') pkScoreDCSC++;
-    pkTakenDCSC++;
+    if (result === 'goal') pkScoreARL++;
+    pkTakenARL++;
     pkTeamTurn = 'opponent';
   } else {
     const event = { type: eventType, team: 'opponent', minute: 'PK', round: pkSuddenDeath ? 'SD' : (pkTakenOpp + 1) };
     game.events.push(event);
     if (result === 'goal') pkScoreOpp++;
     pkTakenOpp++;
-    pkTeamTurn = 'dcsc';
+    pkTeamTurn = 'ARL';
   }
 
   // Persist PK state
   game.pkState = {
-    totalKicks: pkTotalKicks, firstKicker: game.pkState?.firstKicker || 'dcsc',
-    teamTurn: pkTeamTurn, scoreDCSC: pkScoreDCSC, scoreOpp: pkScoreOpp,
-    takenDCSC: pkTakenDCSC, takenOpp: pkTakenOpp, suddenDeath: pkSuddenDeath
+    totalKicks: pkTotalKicks, firstKicker: game.pkState?.firstKicker || 'ARL',
+    teamTurn: pkTeamTurn, scoreARL: pkScoreARL, scoreOpp: pkScoreOpp,
+    takenARL: pkTakenARL, takenOpp: pkTakenOpp, suddenDeath: pkSuddenDeath
   };
   saveActiveGame(game);
 
@@ -1057,9 +1057,9 @@ function pkRecordKick(result) {
   }
 
   // Check if all regulation kicks taken and tied → sudden death
-  if (!pkSuddenDeath && pkTakenDCSC >= pkTotalKicks && pkTakenOpp >= pkTotalKicks) {
-    if (pkScoreDCSC !== pkScoreOpp) {
-      finalizePK(pkScoreDCSC > pkScoreOpp ? 'dcsc' : 'opponent');
+  if (!pkSuddenDeath && pkTakenARL >= pkTotalKicks && pkTakenOpp >= pkTotalKicks) {
+    if (pkScoreARL !== pkScoreOpp) {
+      finalizePK(pkScoreARL > pkScoreOpp ? 'ARL' : 'opponent');
       return;
     }
     pkSuddenDeath = true;
@@ -1071,28 +1071,28 @@ function pkRecordKick(result) {
 function checkPKClinch() {
   if (pkSuddenDeath) {
     // In sudden death: after both teams kick in a round, check if one scored and other missed
-    if (pkTakenDCSC === pkTakenOpp) {
-      if (pkScoreDCSC !== pkScoreOpp) return pkScoreDCSC > pkScoreOpp ? 'dcsc' : 'opponent';
+    if (pkTakenARL === pkTakenOpp) {
+      if (pkScoreARL !== pkScoreOpp) return pkScoreARL > pkScoreOpp ? 'ARL' : 'opponent';
     }
     return null;
   }
 
-  const remainDCSC = pkTotalKicks - pkTakenDCSC;
+  const remainARL = pkTotalKicks - pkTakenARL;
   const remainOpp = pkTotalKicks - pkTakenOpp;
 
-  // DCSC can't be caught even if opponent makes all remaining
-  if (pkScoreDCSC > pkScoreOpp + remainOpp) return 'dcsc';
+  // ARL can't be caught even if opponent makes all remaining
+  if (pkScoreARL > pkScoreOpp + remainOpp) return 'ARL';
   // Opponent can't be caught
-  if (pkScoreOpp > pkScoreDCSC + remainDCSC) return 'opponent';
+  if (pkScoreOpp > pkScoreARL + remainARL) return 'opponent';
 
   return null;
 }
 
 function finalizePK(winner) {
   const game = getActiveGame();
-  game.pkScore = { dcsc: pkScoreDCSC, opponent: pkScoreOpp };
+  game.pkScore = { ARL: pkScoreARL, opponent: pkScoreOpp };
   saveActiveGame(game);
-  finalizeGame(winner === 'dcsc' ? 'W' : 'L');
+  finalizeGame(winner === 'ARL' ? 'W' : 'L');
 }
 
 // ---- Finalize ----
@@ -1309,7 +1309,7 @@ function saveEditGame() {
   editCardEvents.forEach(e => {
     const card = { type: e.type, team: e.team };
     if (e.isCoach) card.isCoach = true;
-    else if (e.team === 'dcsc' && e.playerId) card.playerId = e.playerId;
+    else if (e.team === 'ARL' && e.playerId) card.playerId = e.playerId;
     else if (e.team === 'opponent' && e.jersey) card.jersey = e.jersey;
     if (e.secondYellow) card.secondYellow = true;
     events.push(card);
@@ -1330,15 +1330,15 @@ function saveEditGame() {
   // Recalculate PK score from edited PK events
   let pkScore = null;
   if (editPKEvents.length > 0) {
-    let pkDCSC = 0, pkOpp = 0;
+    let pkARL = 0, pkOpp = 0;
     editPKEvents.forEach(e => {
-      if (e.type === 'pk_goal') { if (e.team === 'dcsc') pkDCSC++; else pkOpp++; }
+      if (e.type === 'pk_goal') { if (e.team === 'ARL') pkARL++; else pkOpp++; }
     });
-    pkScore = { dcsc: pkDCSC, opponent: pkOpp };
+    pkScore = { ARL: pkARL, opponent: pkOpp };
     // PK winner determines result when regulation is tied
     if (goalsFor === goalsAgainst) {
-      if (pkDCSC > pkOpp) result = 'W';
-      else if (pkOpp > pkDCSC) result = 'L';
+      if (pkARL > pkOpp) result = 'W';
+      else if (pkOpp > pkARL) result = 'L';
     }
   }
 
@@ -1397,7 +1397,7 @@ function deleteGame() {
 // 6c. GITHUB SYNC
 // ============================================
 const GITHUB_REPO = 'shane818/Gustavo';
-const GITHUB_FILE = 'dcsc-data.json';
+const GITHUB_FILE = 'arl-data.json';
 
 function getGitHubToken() {
   return localStorage.getItem('ghToken') || null;
@@ -1542,7 +1542,7 @@ function mergeRoster(localRoster, remoteRoster) {
 // ============================================
 // 6d. CARD SYSTEM
 // ============================================
-let cardTeam = null;  // 'dcsc' or 'opponent'
+let cardTeam = null;  // 'ARL' or 'opponent'
 let cardType = null;  // 'yellow' or 'red'
 
 function showCardModal() {
@@ -1575,16 +1575,16 @@ function cardBackToTeam() {
 
 function cardSelectType(type) {
   cardType = type;
-  if (cardTeam === 'dcsc') {
+  if (cardTeam === 'ARL') {
     const game = getActiveGame();
     const roster = getGameRoster(game);
     const present = roster.filter(p => game.playersPresent.includes(p.id) && p.name !== 'Own Goal');
     const title = type === 'yellow' ? 'Yellow card — who?' : 'Red card — who?';
-    document.getElementById('card-dcsc-title').textContent = title;
+    document.getElementById('card-ARL-title').textContent = title;
     document.getElementById('card-player-grid').innerHTML = present.map(p =>
-      `<button class="player-btn" onclick="cardSelectDcscPlayer(${p.id})">${p.name}</button>`
+      `<button class="player-btn" onclick="cardSelectARLPlayer(${p.id})">${p.name}</button>`
     ).join('');
-    showCardStep('card-step-dcsc-player');
+    showCardStep('card-step-ARL-player');
   } else {
     const title = type === 'yellow' ? 'Yellow card — opponent' : 'Red card — opponent';
     document.getElementById('card-opp-title').textContent = title;
@@ -1597,38 +1597,38 @@ function cardBackToType() {
   showCardStep('card-step-type');
 }
 
-function cardSelectDcscPlayer(playerId) {
+function cardSelectARLPlayer(playerId) {
   const game = getActiveGame();
   // Check for 2nd yellow → auto-red
   if (cardType === 'yellow') {
-    const hasYellow = game.events.some(e => e.type === 'yellow_card' && e.team === 'dcsc' && e.playerId === playerId);
+    const hasYellow = game.events.some(e => e.type === 'yellow_card' && e.team === 'ARL' && e.playerId === playerId);
     if (hasYellow) {
-      game.events.push({ type: 'red_card', team: 'dcsc', playerId, secondYellow: true, minute: getCurrentMinute() });
+      game.events.push({ type: 'red_card', team: 'ARL', playerId, secondYellow: true, minute: getCurrentMinute() });
       saveActiveGame(game);
       document.getElementById('card-modal').classList.add('hidden');
       showCardFlash('red');
       return;
     }
   }
-  game.events.push({ type: cardType + '_card', team: 'dcsc', playerId, minute: getCurrentMinute() });
+  game.events.push({ type: cardType + '_card', team: 'ARL', playerId, minute: getCurrentMinute() });
   saveActiveGame(game);
   document.getElementById('card-modal').classList.add('hidden');
   showCardFlash(cardType);
 }
 
-function cardSelectDcscCoach() {
+function cardSelectARLCoach() {
   const game = getActiveGame();
   if (cardType === 'yellow') {
-    const hasYellow = game.events.some(e => e.type === 'yellow_card' && e.team === 'dcsc' && e.isCoach);
+    const hasYellow = game.events.some(e => e.type === 'yellow_card' && e.team === 'ARL' && e.isCoach);
     if (hasYellow) {
-      game.events.push({ type: 'red_card', team: 'dcsc', isCoach: true, secondYellow: true, minute: getCurrentMinute() });
+      game.events.push({ type: 'red_card', team: 'ARL', isCoach: true, secondYellow: true, minute: getCurrentMinute() });
       saveActiveGame(game);
       document.getElementById('card-modal').classList.add('hidden');
       showCardFlash('red');
       return;
     }
   }
-  game.events.push({ type: cardType + '_card', team: 'dcsc', isCoach: true, minute: getCurrentMinute() });
+  game.events.push({ type: cardType + '_card', team: 'ARL', isCoach: true, minute: getCurrentMinute() });
   saveActiveGame(game);
   document.getElementById('card-modal').classList.add('hidden');
   showCardFlash(cardType);
@@ -1735,17 +1735,17 @@ function renderEditCards() {
       `<option value="${t}" ${e.type === t ? 'selected' : ''}>${t === 'yellow_card' ? 'Yellow' : 'Red'}</option>`
     ).join('');
 
-    const teamOptions = ['dcsc', 'opponent'].map(t =>
-      `<option value="${t}" ${e.team === t ? 'selected' : ''}>${t === 'dcsc' ? 'DCSC' : 'Opp'}</option>`
+    const teamOptions = ['ARL', 'opponent'].map(t =>
+      `<option value="${t}" ${e.team === t ? 'selected' : ''}>${t === 'ARL' ? 'ARL' : 'Opp'}</option>`
     ).join('');
 
     let recipientHtml = '';
-    if (e.team === 'dcsc' && !e.isCoach) {
+    if (e.team === 'ARL' && !e.isCoach) {
       const playerOpts = roster.map(p =>
         `<option value="p_${p.id}" ${e.playerId === p.id ? 'selected' : ''}>${p.name}</option>`
       ).join('');
       recipientHtml = `<select onchange="updateEditCardRecipient(${i}, this.value)"><option value="coach" ${e.isCoach ? 'selected' : ''}>Coach</option>${playerOpts}</select>`;
-    } else if (e.team === 'dcsc' && e.isCoach) {
+    } else if (e.team === 'ARL' && e.isCoach) {
       const playerOpts = roster.map(p =>
         `<option value="p_${p.id}">${p.name}</option>`
       ).join('');
@@ -1771,7 +1771,7 @@ function updateEditCardType(index, value) {
 
 function updateEditCardTeam(index, value) {
   editCardEvents[index].team = value;
-  if (value === 'dcsc') {
+  if (value === 'ARL') {
     delete editCardEvents[index].jersey;
     editCardEvents[index].isCoach = false;
     const roster = getRoster().filter(p => p.name !== 'Own Goal');
@@ -1805,7 +1805,7 @@ function updateEditCardOppRecipient(index, value) {
 }
 
 function addEditCard() {
-  editCardEvents.push({ type: 'yellow_card', team: 'dcsc', playerId: getRoster().filter(p => p.name !== 'Own Goal')[0]?.id || 1 });
+  editCardEvents.push({ type: 'yellow_card', team: 'ARL', playerId: getRoster().filter(p => p.name !== 'Own Goal')[0]?.id || 1 });
   renderEditCards();
 }
 
@@ -1829,8 +1829,8 @@ function renderEditPKs(opponent) {
   }
 
   container.innerHTML = editPKEvents.map((e, i) => {
-    const teamOptions = ['dcsc', 'opponent'].map(t =>
-      `<option value="${t}" ${e.team === t ? 'selected' : ''}>${t === 'dcsc' ? 'DCSC' : opp}</option>`
+    const teamOptions = ['ARL', 'opponent'].map(t =>
+      `<option value="${t}" ${e.team === t ? 'selected' : ''}>${t === 'ARL' ? 'ARL' : opp}</option>`
     ).join('');
 
     const resultOptions = ['pk_goal', 'pk_miss'].map(t =>
@@ -1838,7 +1838,7 @@ function renderEditPKs(opponent) {
     ).join('');
 
     let playerField = '';
-    if (e.team === 'dcsc') {
+    if (e.team === 'ARL') {
       const playerOptions = roster.map(p =>
         `<option value="${p.id}" ${p.id === e.playerId ? 'selected' : ''}>${p.name}</option>`
       ).join('');
@@ -1875,11 +1875,11 @@ function updateEditPKPlayer(index, value) {
 
 function addEditPK() {
   const roster = getRoster().filter(p => p.name !== 'Own Goal');
-  // Alternate: if last was DCSC, next is opponent, and vice versa
+  // Alternate: if last was ARL, next is opponent, and vice versa
   const lastTeam = editPKEvents.length > 0 ? editPKEvents[editPKEvents.length - 1].team : 'opponent';
-  const nextTeam = lastTeam === 'dcsc' ? 'opponent' : 'dcsc';
+  const nextTeam = lastTeam === 'ARL' ? 'opponent' : 'ARL';
   const event = { type: 'pk_goal', team: nextTeam, minute: 'PK' };
-  if (nextTeam === 'dcsc' && roster.length > 0) event.playerId = roster[0].id;
+  if (nextTeam === 'ARL' && roster.length > 0) event.playerId = roster[0].id;
   editPKEvents.push(event);
   renderEditPKs();
 }
@@ -1891,17 +1891,17 @@ function removeEditPK(index) {
 
 function updateEditPKSummary(opponent) {
   const opp = opponent || document.getElementById('edit-game-opponent').value.trim() || 'Opponent';
-  let dcsc = 0, oppScore = 0;
+  let ARL = 0, oppScore = 0;
   editPKEvents.forEach(e => {
     if (e.type === 'pk_goal') {
-      if (e.team === 'dcsc') dcsc++;
+      if (e.team === 'ARL') ARL++;
       else oppScore++;
     }
   });
   const el = document.getElementById('edit-pk-summary');
   if (editPKEvents.length > 0) {
-    const winner = dcsc > oppScore ? 'DCSC wins' : (oppScore > dcsc ? `${opp} wins` : 'Tied');
-    el.textContent = `PK Score: DCSC ${dcsc} - ${oppScore} ${opp} (${winner})`;
+    const winner = ARL > oppScore ? 'ARL wins' : (oppScore > ARL ? `${opp} wins` : 'Tied');
+    el.textContent = `PK Score: ARL ${ARL} - ${oppScore} ${opp} (${winner})`;
   } else {
     el.textContent = '';
   }
@@ -1923,7 +1923,7 @@ function exportData() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'dcsc-data.json';
+  a.download = 'ARL-data.json';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
