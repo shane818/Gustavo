@@ -1,5 +1,5 @@
 // ============================================
-// DCSC Soccer Tracker — Read-Only Parent View
+// ARL Soccer Tracker — Read-Only Parent View
 // ============================================
 
 // ============================================
@@ -81,18 +81,18 @@ function renderEventLine(e, rosterMap, opponent, score) {
     const note = e.secondYellow ? ' (2nd yellow)' : '';
     return `<div class="goal-event card-event red"><span class="event-icon">🟥</span> ${min}${who}${note}</div>`;
   } else if (e.type === 'pk_goal') {
-    const who = e.team === 'dcsc' ? (rosterMap[e.playerId] || 'DCSC') : opponent;
+    const who = e.team === 'ARL' ? (rosterMap[e.playerId] || 'ARL') : opponent;
     return `<div class="goal-event pk-event"><span class="event-icon">⚽</span> PK ${who}</div>`;
   } else if (e.type === 'pk_miss') {
-    const who = e.team === 'dcsc' ? (rosterMap[e.playerId] || 'DCSC') : opponent;
+    const who = e.team === 'ARL' ? (rosterMap[e.playerId] || 'ARL') : opponent;
     return `<div class="goal-event pk-event pk-miss"><span class="event-icon">✕</span> PK ${who}</div>`;
   }
   return '';
 }
 
 function cardRecipientLabel(e, rosterMap, opponent) {
-  if (e.team === 'dcsc') {
-    if (e.isCoach) return 'DCSC Coach';
+  if (e.team === 'ARL') {
+    if (e.isCoach) return 'ARL Coach';
     return rosterMap[e.playerId] || '?';
   } else {
     if (e.isCoach) return `${opponent} Coach`;
@@ -110,7 +110,7 @@ let playerSort = 'goals';
 // 3. RENDERING
 // ============================================
 function renderHeader() {
-  document.getElementById('team-name').textContent = appData.teamName || 'DCSC';
+  document.getElementById('team-name').textContent = appData.teamName || 'ARL';
   document.getElementById('season-label').textContent = appData.season || '';
 }
 
@@ -148,11 +148,11 @@ function renderGamesTab() {
     (g.guestPlayers || []).forEach(p => rosterMap[p.id] = p.name);
 
     const events = g.events || [];
-    let runDCSC = 0, runOpp = 0;
+    let runARL = 0, runOpp = 0;
     const detailLines = events.map(e => {
       let score = null;
-      if (e.type === 'goal') { runDCSC++; score = `${runDCSC}-${runOpp}`; }
-      else if (e.type === 'opponent_goal') { runOpp++; score = `${runDCSC}-${runOpp}`; }
+      if (e.type === 'goal') { runARL++; score = `${runARL}-${runOpp}`; }
+      else if (e.type === 'opponent_goal') { runOpp++; score = `${runARL}-${runOpp}`; }
       return renderEventLine(e, rosterMap, g.opponent, score);
     }).join('');
     const hasEvents = events.length > 0;
@@ -164,7 +164,7 @@ function renderGamesTab() {
             <div class="game-date">${formatDate(g.date)}</div>
             <div class="game-matchup">vs ${g.opponent}</div>
           </div>
-          <div class="game-score result-${g.result}">${g.result} ${g.goalsFor}-${g.goalsAgainst}${g.pkScore ? ` (${g.pkScore.dcsc}-${g.pkScore.opponent})` : ''}</div>
+          <div class="game-score result-${g.result}">${g.result} ${g.goalsFor}-${g.goalsAgainst}${g.pkScore ? ` (${g.pkScore.ARL}-${g.pkScore.opponent})` : ''}</div>
         </div>
         <div class="game-details">
           ${hasEvents ? detailLines : '<div style="color:#999">No events recorded</div>'}
@@ -282,7 +282,7 @@ function switchStatsView(view) {
 // ============================================
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    const resp = await fetch('../dcsc-data.json');
+    const resp = await fetch('../ARL-data.json');
     if (!resp.ok) throw new Error('Failed to load data');
     appData = await resp.json();
   } catch (err) {
