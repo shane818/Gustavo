@@ -1396,7 +1396,7 @@ function deleteGame() {
 // ============================================
 // 6c. GITHUB SYNC
 // ============================================
-const GITHUB_REPO = 'shane818/soccer-tracker';
+const GITHUB_REPO = 'shane818/Gustavo';
 const GITHUB_FILE = 'dcsc-data.json';
 
 function getGitHubToken() {
