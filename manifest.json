@@ -1,6 +1,6 @@
 {
-  "name": "DCSC Soccer Tracker",
-  "short_name": "DCSC",
+  "name": "Arlington Soccer Tracker",
+  "short_name": "ARL",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
