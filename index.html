@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DCSC">
+  <meta name="theme-color" content="#1E1F4D">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>DCSC Soccer Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=3">
+</head>
+<body>
+
+  <header id="app-header">
+    <h1 id="team-name">Soccer Tracker</h1>
+    <p id="season-label"></p>
+  </header>
+
+  <main>
+    <!-- Games Tab -->
+    <section id="tab-games" class="tab-panel active">
+      <div id="season-summary"></div>
+      <div id="game-action-btn"></div>
+      <div id="games-list"></div>
+    </section>
+
+    <!-- Stats Tab -->
+    <section id="tab-stats" class="tab-panel">
+      <div class="stats-toggle">
+        <button class="stats-toggle-btn active" data-view="team">Team</button>
+        <button class="stats-toggle-btn" data-view="players">Players</button>
+      </div>
+      <div id="stats-team" class="stats-view active">
+        <div id="team-record"></div>
+        <div id="opponent-history"></div>
+      </div>
+      <div id="stats-players" class="stats-view">
+        <div id="player-leaderboard"></div>
+      </div>
+    </section>
+
+    <!-- Roster Tab -->
+    <section id="tab-roster" class="tab-panel">
+      <div id="roster-list"></div>
+      <button id="add-player-btn" class="btn btn-primary">+ Add Player</button>
+      <div class="data-controls">
+        <button id="sync-github-btn" class="btn btn-primary btn-full">Sync to GitHub</button>
+        <div id="sync-status"></div>
+      </div>
+      <div class="data-controls">
+        <button id="export-data-btn" class="btn btn-secondary btn-full">Export Data</button>
+        <label class="btn btn-secondary btn-full" for="import-file">Import Data</label>
+        <input type="file" id="import-file" accept=".json" style="display:none">
+      </div>
+      <div id="token-controls">
+        <button id="forget-token-btn" class="btn-link">Forget GitHub Token</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Bottom Tab Bar -->
+  <nav id="tab-bar">
+    <button class="tab-btn active" data-tab="games">Games</button>
+    <button class="tab-btn" data-tab="stats">Stats</button>
+    <button class="tab-btn" data-tab="roster">Roster</button>
+  </nav>
+
+  <!-- Game Overlay -->
+  <div id="game-overlay" class="hidden">
+    <!-- Pre-game Setup -->
+    <div id="pregame-setup" class="overlay-screen hidden">
+      <h2>New Game</h2>
+      <div class="form-group">
+        <label for="opponent-input">Opponent</label>
+        <input type="text" id="opponent-input" placeholder="Enter opponent name" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label for="half-length-select">Half Length</label>
+        <select id="half-length-select">
+          <option value="25" selected>25 min</option>
+          <option value="30">30 min</option>
+          <option value="35">35 min</option>
+          <option value="40">40 min</option>
+          <option value="45">45 min</option>
+        </select>
+      </div>
+      <h3>Who's playing today?</h3>
+      <div id="attendance-list"></div>
+      <h3>Guest Players</h3>
+      <div id="guest-list"></div>
+      <button id="add-guest-btn" class="btn btn-secondary btn-full" style="margin-bottom:16px">+ Add Guest Player</button>
+      <div class="overlay-actions">
+        <button id="cancel-game-btn" class="btn btn-secondary">Cancel</button>
+        <button id="kickoff-btn" class="btn btn-primary">Kick Off!</button>
+      </div>
+    </div>
+
+    <!-- In-Game View -->
+    <div id="ingame-view" class="overlay-screen hidden">
+      <div id="scoreboard">
+        <button id="wake-lock-toggle" class="wake-lock-btn" onclick="toggleWakeLock()" style="display:none">🔓 Screen Off</button>
+        <div id="game-timer">0:00</div>
+        <div id="score-half">1st Half</div>
+        <div id="score-display">
+          <span id="score-home">0</span>
+          <span class="score-separator">-</span>
+          <span id="score-away">0</span>
+        </div>
+        <div id="score-teams">
+          <span id="score-home-label">DCSC</span>
+          <span id="score-away-label">Opponent</span>
+        </div>
+      </div>
+      <div id="goal-flash" class="hidden">GOAL!</div>
+      <div id="player-grid"></div>
+      <div class="game-controls">
+        <button id="opponent-goal-btn" class="btn btn-danger">Opponent Goal</button>
+        <button id="card-btn" class="btn btn-card">Card</button>
+        <button id="undo-btn" class="btn btn-secondary">Undo</button>
+      </div>
+      <div class="game-controls">
+        <button id="half-toggle-btn" class="btn btn-secondary">End 1st Half</button>
+        <button id="end-game-btn" class="btn btn-warning hidden">End Game</button>
+      </div>
+    </div>
+
+    <!-- Halftime View -->
+    <div id="halftime-view" class="overlay-screen hidden">
+      <h2 id="halftime-title">Halftime</h2>
+      <div id="halftime-score" class="halftime-score"></div>
+      <button id="start-2nd-half-btn" class="btn btn-primary btn-large">Start 2nd Half</button>
+    </div>
+
+    <!-- Tied Game Modal -->
+    <div id="tied-game-modal" class="overlay-screen hidden">
+      <h2>Game Tied!</h2>
+      <div id="tied-score" class="halftime-score"></div>
+      <div class="tied-options">
+        <button class="btn btn-primary btn-large" onclick="finalizeDraw()">Game Over (Draw)</button>
+        <div class="tied-ot-section">
+          <label for="ot-length-select">Overtime Half Length</label>
+          <select id="ot-length-select">
+            <option value="5">5 min</option>
+            <option value="10" selected>10 min</option>
+            <option value="15">15 min</option>
+          </select>
+          <button class="btn btn-secondary btn-large" onclick="startOvertime()">Start Overtime</button>
+        </div>
+        <button class="btn btn-warning btn-large" onclick="startPenaltiesSetup()">Penalty Kicks</button>
+      </div>
+    </div>
+
+    <!-- Post-OT Tied Modal -->
+    <div id="post-ot-modal" class="overlay-screen hidden">
+      <h2>Still Tied After OT!</h2>
+      <div id="post-ot-score" class="halftime-score"></div>
+      <div class="tied-options">
+        <button class="btn btn-primary btn-large" onclick="finalizeDraw()">Game Over (Draw)</button>
+        <button class="btn btn-warning btn-large" onclick="startPenaltiesSetup()">Penalty Kicks</button>
+      </div>
+    </div>
+
+    <!-- PK Setup Modal -->
+    <div id="pk-setup-modal" class="overlay-screen hidden">
+      <h2>Penalty Kicks</h2>
+      <div class="form-group">
+        <label for="pk-rounds-select">Kicks per team</label>
+        <select id="pk-rounds-select">
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5" selected>5</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Who kicks first?</label>
+        <div class="pk-first-kick-options">
+          <label class="radio-label"><input type="radio" name="pk-first" value="dcsc" checked> DCSC</label>
+          <label class="radio-label" id="pk-first-opp-label"><input type="radio" name="pk-first" value="opponent"> Opponent</label>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-large" onclick="startPenalties()">Start PKs</button>
+    </div>
+
+    <!-- PK View -->
+    <div id="pk-view" class="overlay-screen hidden">
+      <h2>Penalty Kicks</h2>
+      <div id="pk-score-display" class="pk-score"></div>
+      <div id="pk-turn-label" class="pk-turn"></div>
+      <div id="pk-player-select"></div>
+      <div class="pk-buttons">
+        <button class="btn btn-primary btn-large" id="pk-goal-btn" onclick="pkRecordKick('goal')">Goal</button>
+        <button class="btn btn-danger btn-large" id="pk-miss-btn" onclick="pkRecordKick('miss')">Miss</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Assist Modal -->
+  <div id="assist-modal" class="hidden">
+    <div class="modal-content">
+      <h3 id="assist-title">Who assisted?</h3>
+      <div id="assist-grid"></div>
+      <button id="no-assist-btn" class="btn btn-secondary btn-full">No Assist</button>
+    </div>
+  </div>
+
+  <!-- Card Modal (multi-step) -->
+  <div id="card-modal" class="hidden">
+    <div class="modal-content">
+      <!-- Step 1: Which team -->
+      <div id="card-step-team" class="card-step">
+        <h3>Issue Card</h3>
+        <div class="card-team-btns">
+          <button class="btn btn-primary btn-full" onclick="cardSelectTeam('dcsc')">DCSC</button>
+          <button class="btn btn-danger btn-full" id="card-opp-btn" onclick="cardSelectTeam('opponent')">Opponent</button>
+        </div>
+        <button class="btn btn-secondary btn-full" onclick="cancelCard()" style="margin-top:12px">Cancel</button>
+      </div>
+
+      <!-- Step 2: Card type -->
+      <div id="card-step-type" class="card-step hidden">
+        <h3>Card Type</h3>
+        <div class="card-type-btns">
+          <button class="btn btn-full card-yellow-btn" onclick="cardSelectType('yellow')">Yellow Card</button>
+          <button class="btn btn-full card-red-btn" onclick="cardSelectType('red')">Red Card</button>
+        </div>
+        <button class="btn btn-secondary btn-full" onclick="cardBackToTeam()" style="margin-top:12px">Back</button>
+      </div>
+
+      <!-- Step 3a: DCSC player selection -->
+      <div id="card-step-dcsc-player" class="card-step hidden">
+        <h3 id="card-dcsc-title">Who received the card?</h3>
+        <div id="card-player-grid"></div>
+        <button class="btn btn-secondary btn-full" onclick="cardSelectDcscCoach()">Coach</button>
+        <button class="btn btn-secondary btn-full" onclick="cardBackToType()" style="margin-top:8px">Back</button>
+      </div>
+
+      <!-- Step 3b: Opponent player selection -->
+      <div id="card-step-opp-player" class="card-step hidden">
+        <h3 id="card-opp-title">Opponent jersey # (optional)</h3>
+        <div class="form-group">
+          <input type="text" id="card-jersey-input" placeholder="Jersey number" inputmode="numeric" autocomplete="off">
+        </div>
+        <button class="btn btn-primary btn-full" onclick="cardSubmitOpponent()">Done</button>
+        <button class="btn btn-secondary btn-full" onclick="cardSelectOppCoach()" style="margin-top:8px">Coach</button>
+        <button class="btn btn-secondary btn-full" onclick="cardBackToType()" style="margin-top:8px">Back</button>
+      </div>
+
+      <!-- Step 4: Opponent 2nd yellow confirmation -->
+      <div id="card-step-second-yellow" class="card-step hidden">
+        <h3 id="card-2nd-title">2nd yellow for this player?</h3>
+        <p id="card-2nd-info"></p>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="cardConfirmSecondYellow(false)">No, just yellow</button>
+          <button class="btn btn-danger" onclick="cardConfirmSecondYellow(true)">Yes, Red Card</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- End Game Confirmation removed — replaced by halftime/tied-game flow -->
+
+  <!-- Edit Player Modal -->
+  <div id="edit-player-modal" class="hidden">
+    <div class="modal-content">
+      <h3 id="edit-player-title">Edit Player</h3>
+      <div class="form-group">
+        <label for="edit-player-name">Name</label>
+        <input type="text" id="edit-player-name" autocomplete="off">
+      </div>
+      <div class="modal-actions">
+        <button id="edit-player-cancel" class="btn btn-secondary">Cancel</button>
+        <button id="edit-player-save" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Game Modal -->
+  <div id="edit-game-modal" class="hidden">
+    <div class="modal-content">
+      <h3>Edit Game</h3>
+      <div class="form-group">
+        <label for="edit-game-opponent">Opponent</label>
+        <input type="text" id="edit-game-opponent" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label for="edit-game-date">Date</label>
+        <input type="date" id="edit-game-date">
+      </div>
+      <h4 class="edit-section-label">DCSC Goals</h4>
+      <div id="edit-game-goals"></div>
+      <button id="edit-add-goal-btn" class="btn btn-secondary btn-full" style="margin-top:8px">+ Add Goal</button>
+      <h4 class="edit-section-label">Opponent Goals</h4>
+      <div class="opponent-goal-counter">
+        <button class="btn btn-counter" id="opp-goal-minus">−</button>
+        <span id="edit-opponent-goals">0</span>
+        <button class="btn btn-counter" id="opp-goal-plus">+</button>
+      </div>
+      <h4 class="edit-section-label">Cards</h4>
+      <div id="edit-game-cards"></div>
+      <button id="edit-add-card-btn" class="btn btn-secondary btn-full" style="margin-top:8px">+ Add Card</button>
+      <div id="edit-pk-section" class="hidden">
+        <h4 class="edit-section-label">Penalty Kicks</h4>
+        <div id="edit-game-pks"></div>
+        <button id="edit-add-pk-btn" class="btn btn-secondary btn-full" style="margin-top:8px">+ Add PK Kick</button>
+        <div id="edit-pk-summary" class="edit-pk-summary"></div>
+      </div>
+      <div class="modal-actions edit-game-actions">
+        <button id="edit-game-cancel" class="btn btn-secondary">Cancel</button>
+        <button id="edit-game-delete" class="btn btn-danger">Delete</button>
+        <button id="edit-game-save" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Game Confirmation -->
+  <div id="delete-game-confirm" class="hidden">
+    <div class="modal-content">
+      <h3>Delete Game?</h3>
+      <p id="delete-game-info"></p>
+      <p style="color:#C41E3A; font-size:0.9rem;">This cannot be undone.</p>
+      <div class="modal-actions">
+        <button id="delete-game-cancel" class="btn btn-secondary">Cancel</button>
+        <button id="delete-game-ok" class="btn btn-danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
